@@ -7,6 +7,7 @@ workoutAPIKey = '9BqMCmqH+81LMd1zjFXhxw==ocVIvWHb5irurBrY'
 workoutAPIUrlBase = 'https://api.api-ninjas.com/v1/exercises?'
 cardioURLBase = 'type=cardio'
 strengthURLBase = 'type=strength'
+stretchingURLBase = 'type=stretching'
 difficultyURLBase = 'difficulty='
 
 
@@ -15,23 +16,37 @@ def hello_world():
     return 'Hello World!'
 
 
+### CARDIO
 @app.route('/cardio')
-def getCardioWorkout():
-    response = requests.get(workoutAPIUrlBase + cardioURLBase, headers={'X-Api-Key': workoutAPIKey})
+@app.route('/cardio/<difficulty>')
+def getCardioWorkout(difficulty=''):
+    difficultyURL = '&' + difficultyURLBase + difficulty
+    response = requests.get(workoutAPIUrlBase + cardioURLBase + difficultyURL, headers={'X-Api-Key': workoutAPIKey})
     if response.status_code == requests.codes.ok:
-        print(response.text)
         return response.text
     else:
         print("Error:", response.status_code, response.text)
 
 
+### STRENGTH
 @app.route('/strength')
 @app.route('/strength/<difficulty>')
-def getStrengthWorkout(difficulty='beginner'):
+def getStrengthWorkout(difficulty=''):
     difficultyURL = '&' + difficultyURLBase + difficulty
     response = requests.get(workoutAPIUrlBase + strengthURLBase + difficultyURL, headers={'X-Api-Key': workoutAPIKey})
     if response.status_code == requests.codes.ok:
-        print(response.text)
+        return response.text
+    else:
+        print("Error:", response.status_code, response.text)
+
+
+### STRETCHING
+@app.route('/stretching')
+@app.route('/stretching/<difficulty>')
+def getStretchingWorkout(difficulty=''):
+    difficultyURL = '&' + difficultyURLBase + difficulty
+    response = requests.get(workoutAPIUrlBase + stretchingURLBase + difficultyURL, headers={'X-Api-Key': workoutAPIKey})
+    if response.status_code == requests.codes.ok:
         return response.text
     else:
         print("Error:", response.status_code, response.text)
