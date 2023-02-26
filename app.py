@@ -9,14 +9,44 @@ app = Flask(__name__)
 gym_access = True
 proficiency = None
 weight_goal = None
-health_conditions = []
 focus = None
+current_weight = None
+current_goal = None
+
+previous_weights = dict() #key is exercise name
+exercise_difficulty = dict() #difficulty can be easy medium or hard
 
 
 @app.route('/')
 def hello_world():  # put application's code here
     return "Hello world"
 
+@app.route('/setgoal/<goal>')
+def set_goal(goal):
+    global current_goal
+    current_goal=goal
+
+
+@app.route('/recommend/<exercise>')
+def recommend_exercise(exercise):
+    if exercise not in previous_weights:
+        return "Please set exercise history first" #must set past weight and reps and difficulty before algorithm can recommend
+    if exercise_difficulty[exercise] == 'easy':
+        new_weight = int(previous_weights[exercise] * 1.5)
+        return str(new_weight)
+    if exercise_difficulty[exercise]=='medium':
+        new_weight = int(previous_weights[exercise] * 1.2)
+        return str(new_weight)
+    if exercise_difficulty[exercise]=='hard':
+        new_weight = int(previous_weights[exercise] * 0.8)
+        return str(new_weight)
+    return ""
+
+@app.route("/setweight/<exercise>/<weight>/<difficulty>")
+def setWeight(exercise,weight,difficulty):
+    previous_weights[exercise] = int(weight)
+    exercise_difficulty[exercise] = difficulty
+    return ""
 
 @app.route('/setgymaccess')
 def setGym():  # put application's code here
@@ -49,16 +79,9 @@ def setWeightGoal():
     weight_goal = results
     return ""
 
-@app.route('/addHealthCondition')
-def addHealthCondition():
-    global health_conditions
-    results = request.args.get("health_condition")
-    health_conditions.append(results)
-    return ""
 
 @app.route('/recommend')
 def recommend(): #pass in num_exercises as param
-    #api_url = 'https://api.api-ninjas.com/v1/exercises?muscle={}'.format('biceps')
     api_url = 'https://api.api-ninjas.com/v1/exercises?'
     num_exercises = int(request.args.get("num_exercises"))
 
