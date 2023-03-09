@@ -7,6 +7,8 @@ import googlemaps
 import time
 import geocoder
 import random
+import itertools
+from collections import Counter
 
 app = Flask(__name__)
 
@@ -95,6 +97,7 @@ def recommend(): #pass in num_exercises as param
             print("Error:", response.status_code, response.text)
     d = {"exercises": exercises[:min(len(exercises),num_exercises)]}
     return json.dumps(d)
+
 @app.route('/findNearbyWorkouts')
 def findNearbyWorkouts():
     '''Find nearby workouts to recommend based on live tracking information'''
@@ -108,7 +111,7 @@ def findNearbyWorkouts():
     location = lat, lng # get current location
 
     #randomize types of workout places to reccomend
-    workout_types = ['gym', 'park', 'hike', 'yoga', 'dance', 'swim']
+    workout_types = ['gym', 'hiking', 'yoga', 'dancing', 'swimming', 'rock climbing', 'boxing', 'martial arts']
     if gym_access:
         search_workout = workout_types[random.randrange(0,len(workout_types))]
     else:
@@ -134,13 +137,19 @@ def findNearbyWorkouts():
         )
         workout_list.extend(response.get('results'))
         next_p = response.get('next_p')
-    workout_option_names = list()
+    workout_recommendation = dict()
     #print(workout_list)
     for w in workout_list:
-        workout_option_names.append('NAME=' + w['name'] + ' | ' + 'RATING='+  w['rating'] + ' | ' + 'ADDRESS=' + w['vicinity'])
+        #if w['opening_hours']['open_now'] == True:
+        if len(workout_recommendation) >= 3:
+            break
+        workout_recommendation[w['name']] = {'rating': w['rating'], 'address': w['vicinity']}
 
-    workout_option_names.insert(0, search_workout)
-    return workout_option_names
+
+    # returns a list where the first index is the type of workout
+    # and the second is a dictionary keyed by the name and val
+    # is another dictionary containing the address and rating
+    return [search_workout, workout_recommendation]
 
 
     #Information from maps:
