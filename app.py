@@ -8,26 +8,19 @@ app = Flask(__name__)
 
 gym_access = True
 proficiency = None
-weight_goal = None
-focus = None
-current_weight = None
-current_goal = None
 
 previous_weights = dict() #key is exercise name
 exercise_difficulty = dict() #difficulty can be easy medium or hard
 
+exercises_to_avoid = set()
 
 @app.route('/')
 def hello_world():  # put application's code here
     return "Hello world"
 
-@app.route('/setgoal/<goal>')
-def set_goal(goal):
-    global current_goal
-    current_goal=goal
 
 
-@app.route('/recommend/<exercise>')
+@app.route('/recommend/<exercise>') #recommends workout weight based on past workouts and difficulty, must set history first
 def recommend_exercise(exercise):
     if exercise not in previous_weights:
         return "Please set exercise history first" #must set past weight and reps and difficulty before algorithm can recommend
@@ -42,26 +35,20 @@ def recommend_exercise(exercise):
         return str(new_weight)
     return ""
 
-@app.route("/setweight/<exercise>/<weight>/<difficulty>")
+@app.route("/setweight/<exercise>/<weight>/<difficulty>") #sets workout weight and difficulty
 def setWeight(exercise,weight,difficulty):
     previous_weights[exercise] = int(weight)
     exercise_difficulty[exercise] = difficulty
     return ""
 
 @app.route('/setgymaccess')
-def setGym():  # put application's code here
+def setGym():  # sets whether or not the user has access to gyms
     global gym_access
     results = request.args.get("access")
     if results == 'false':
         gym_access = False
     elif results == 'true':
         gym_access = True
-    return ""
-@app.route('/setfocus')
-def setFocus():
-    global focus
-    results = request.args.get("proficiency")
-    focus = results
     return ""
 
 @app.route('/setproficiency')
@@ -72,11 +59,11 @@ def setProficiency(): #can be beginner, intermediate, or expert
     return ""
 
 
-@app.route('/setweightgoal')
-def setWeightGoal():
-    global weight_goal
-    results = request.args.get("weight_goal")
-    weight_goal = results
+@app.route('/setworkoutrating/<exercise>/<rating>') #rating is either 0 or 1, 0 being bad 1 being good
+def setWorkoutRating(exercise,rating):
+    if rating=='0':
+        exercises_to_avoid.add(exercise)
+    print(exercises_to_avoid)
     return ""
 
 
@@ -103,12 +90,18 @@ def recommend(): #pass in num_exercises as param
         page+=1
         if response.status_code == requests.codes.ok:
             js = json.loads(response.text)
+            if len(js)==0:
+                break
             if not gym_access:
                 for i in js:
                     if i['equipment']=='body_only':
-                        exercises.append(i)
+                        if "".join(i['name'].split()) not in exercises_to_avoid:
+                            exercises.append(i)
             else:
-                exercises.extend(js)
+                for i in js:
+                    print("".join(i['name'].split()))
+                    if "".join(i['name'].split()) not in exercises_to_avoid:
+                        exercises.append(i)
         else:
             print("Error:", response.status_code, response.text)
     d = {"exercises": exercises[:min(len(exercises),num_exercises)]}
