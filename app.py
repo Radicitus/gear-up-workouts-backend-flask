@@ -7,8 +7,10 @@ import googlemaps
 import time
 import geocoder
 import random
+import datetime
 import itertools
 from collections import Counter
+
 
 app = Flask(__name__)
 
@@ -98,30 +100,45 @@ def recommend(): #pass in num_exercises as param
     d = {"exercises": exercises[:min(len(exercises),num_exercises)]}
     return json.dumps(d)
 
-@app.route('/findNearbyWorkouts')
-def findNearbyWorkouts():
+@app.route('/randomTimeAlternativeWorkout')
+def randomTimeAlternativeWorkout():
+    prop = random.random()
+    start = str(datetime.date.today().strftime("%m/%d/%Y")) + " 9:00 AM"
+    end = str(datetime.date.today().strftime("%m/%d/%Y")) + " 9:00 PM"
+    time_format = '%m/%d/%Y %I:%M %p'
+
+    stime = time.mktime(time.strptime(start, time_format))
+    etime = time.mktime(time.strptime(end, time_format))
+
+    ptime = stime + prop * (etime - stime)
+
+    global randomTime
+    randomTime = time.strftime(time_format, time.localtime(ptime))
+    return ""
+@app.route('/findNearbyAlternativeWorkouts')
+def findNearbyAlternativeWorkouts():
     '''Find nearby workouts to recommend based on live tracking information'''
     MAPS_API_KEY = "AIzaSyD-ld44eeW8LxC2PZfHa9m2p1cEfzaRleE"
 
     map_client = googlemaps.Client(MAPS_API_KEY)
 
     geo = geocoder.ip('me')
-    lat = geo.latlng[0]
-    lng = geo.latlng[1]
-    location = lat, lng # get current location
+    curr_lat = geo.latlng[0]
+    curr_lng = geo.latlng[1]
+    curr_location = curr_lat, curr_lng # get current location
 
-    #randomize types of workout places to reccomend
+    #randomize types of workout places to recommend
     workout_types = ['gym', 'hiking', 'yoga', 'dancing', 'swimming', 'rock climbing', 'boxing', 'martial arts']
     if gym_access:
-        search_workout = workout_types[random.randrange(0,len(workout_types))]
+        workout_type = workout_types[random.randrange(0,len(workout_types))]
     else:
-        search_workout = workout_types[random.randrange(1,len(workout_types))]
+        workout_type = workout_types[random.randrange(1,len(workout_types))]
 
     distance = 8046.7 # 5 miles in meters
     workout_list = list()
     response = map_client.places_nearby(
-        location=location,
-        keyword=search_workout,
+        location=curr_location,
+        keyword=workout_type,
         radius=distance
     )
 
@@ -131,29 +148,86 @@ def findNearbyWorkouts():
     while next_p:
         time.sleep(2)
         response = map_client.places_nearby(
-             location=location,
-             keyword=search_workout,
+             location=curr_location,
+             keyword=workout_type,
              radius=distance
         )
         workout_list.extend(response.get('results'))
         next_p = response.get('next_p')
+
+
     workout_recommendation = dict()
-    #print(workout_list)
+    print(workout_list)
+    # get workout recommendation and its attributes
+    curr_time = datetime.datetime.now()
     for w in workout_list:
-        #if w['opening_hours']['open_now'] == True:
         if len(workout_recommendation) >= 3:
             break
-        workout_recommendation[w['name']] = {'rating': w['rating'], 'address': w['vicinity']}
+
+        end = 'https://www.google.com/maps/dir/?api=1&'
+        dest_lat_lng = str(w['geometry']['location']['lat']) + "," + str(w['geometry']['location']['lng'])
+        str_curr_location = str(curr_location[0]) + "," + str(curr_location[1])
+        directions_request = f"origin={str_curr_location}&destination={dest_lat_lng}&key={MAPS_API_KEY}"
+        maps_link = end + directions_request
+
+        #if w['opening_hours']['open_now'] == True:
+        workout_recommendation[w['name']] = {'rating': w['rating'], 'address': w['vicinity'], 'directions': maps_link} #, 'maps_link': w['photos'][0]['html_attributions'][0].split("\"")[1]}
+
+
+
+
+
 
 
     # returns a list where the first index is the type of workout
     # and the second is a dictionary keyed by the name and val
     # is another dictionary containing the address and rating
-    return [search_workout, workout_recommendation]
-
+    randomTimeAlternativeWorkout()
+    global randomTime
+    #return [workout_type, randomTime, workout_recommendation]
+    t = []
+    for key in workout_recommendation.keys():
+        t.append(key)
+    name1 = t[0]
+    name2 = t[1]
+    name3 = t[2]
+    output = {"LiveWorkouts": [
+        {
+            "workout_type": workout_type,
+            "name": name1,
+            "address": workout_recommendation[name1]['address'],
+            "rating": workout_recommendation[name1]['rating'],
+            "maps_link": workout_recommendation[name1]['directions']
+        },
+        {
+            "workout_type": workout_type,
+            "name": name2,
+            "address": workout_recommendation[name2]['address'],
+            "rating": workout_recommendation[name2]['rating'],
+            "maps_link": workout_recommendation[name2]['directions']
+        },
+        {
+            "workout_type": workout_type,
+            "name": name3,
+            "address": workout_recommendation[name3]['address'],
+            "rating": workout_recommendation[name3]['rating'],
+            "maps_link": workout_recommendation[name3]['directions']
+        }
+    ]}
+    return json.dumps(output)
 
     #Information from maps:
     #business_status, geometry (lat/lng), icon, name, opening_hours, photos, vicinity (address), rating
+
+
+
+# @app.route('/randomTimeAlternativeWorkout')
+# def timeRecommendAlternativeWorkout():
+# api route to generate custom workout for the day
+
+
+# google maps embed link
+# postman to get format of json
 
 
 
@@ -163,3 +237,4 @@ def findNearbyWorkouts():
 
 if __name__ == '__main__':
     app.run()
+
