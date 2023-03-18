@@ -197,23 +197,28 @@ def findNearbyAlternativeWorkouts():
             "name": name1,
             "address": workout_recommendation[name1]['address'],
             "rating": workout_recommendation[name1]['rating'],
-            "maps_link": workout_recommendation[name1]['directions']
+            "maps_link": workout_recommendation[name1]['directions'],
+            "time" : randomTime
         },
         {
             "workout_type": workout_type,
             "name": name2,
             "address": workout_recommendation[name2]['address'],
             "rating": workout_recommendation[name2]['rating'],
-            "maps_link": workout_recommendation[name2]['directions']
+            "maps_link": workout_recommendation[name2]['directions'],
+            "time": randomTime
         },
         {
             "workout_type": workout_type,
             "name": name3,
             "address": workout_recommendation[name3]['address'],
             "rating": workout_recommendation[name3]['rating'],
-            "maps_link": workout_recommendation[name3]['directions']
+            "maps_link": workout_recommendation[name3]['directions'],
+            "time": randomTime
         }
     ]}
+
+    print(output)
     return json.dumps(output)
 
     #Information from maps:
