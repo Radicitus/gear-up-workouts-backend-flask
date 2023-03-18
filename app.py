@@ -106,11 +106,11 @@ def randomTimeAlternativeWorkout():
     curr_hour = datetime.datetime.now().hour
     curr_minute = datetime.datetime.now().minute
 
-    curr_hour = 20
+    curr_hour = 14
     curr_minute = 50
 
     # if time is past 9 pm, return null_output
-    if (curr_hour >= 21):
+    if (curr_hour >= 19):
         randomTime = -1
         return ""
 
@@ -127,7 +127,7 @@ def randomTimeAlternativeWorkout():
     else:
         start += "AM"
 
-    end = str(datetime.date.today().strftime("%m/%d/%Y")) + " 9:00 PM"
+    end = str(datetime.date.today().strftime("%m/%d/%Y")) + " 7:00 PM"
     time_format = '%m/%d/%Y %I:%M %p'
 
     start_time = time.mktime(time.strptime(start, time_format))
@@ -223,7 +223,7 @@ def findNearbyAlternativeWorkouts():
         str_curr_location = str(curr_location[0]) + "," + str(curr_location[1])
         directions_request = f"origin={str_curr_location}&destination={dest_lat_lng}&key={MAPS_API_KEY}"
         maps_link = end + directions_request
-        workout_recommendation[w['name']] = {'rating': w['rating'], 'address': w['vicinity'], 'directions': maps_link} #, 'maps_link': w['photos'][0]['html_attributions'][0].split("\"")[1]}
+        workout_recommendation[w['name']] = {'rating': w['rating'], 'address': w['vicinity'], 'directions': maps_link}
 
     # Get list of destination names
     t = []
