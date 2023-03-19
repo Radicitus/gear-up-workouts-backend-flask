@@ -64,7 +64,11 @@ def getTotalWeight(username):
 @app.route('/api/hasonboarded/<username>')
 def hasOnboarded(username):
     data = info.find_one({"name": username})
-    return str(data['onboarded'])
+    # print(data)
+    if data is None:
+        return json.dumps({'onboarded': "false"})
+    else:
+        return json.dumps({'onboarded': "true"})
 
 
 @app.route("/api/rateexercise/<username>/<exercise>/<difficulty>")  # sets workout weight and difficulty
