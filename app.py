@@ -310,30 +310,24 @@ def randomTimeAlternativeWorkout():
 
     curr_hour = datetime.datetime.now().hour
     curr_minute = datetime.datetime.now().minute
+    curr_second = datetime.datetime.now().second
 
     # curr_hour = 18
     # curr_minute = 50
+    # curr_second = 0
 
     # if time is past 7 pm, return null_output
     if (curr_hour >= 19):
         randomTime = -1
         return ""
 
-    # reset from military time and get PM or AM
-    isPM = False
-    if (curr_hour > 12):
-        curr_hour = curr_hour - 12
-        isPM = True
 
     p = random.random()
-    start = str(datetime.date.today().strftime("%m/%d/%Y")) + f" {curr_hour}:{curr_minute} "
-    if (isPM):
-        start += "PM"
-    else:
-        start += "AM"
+    start = str(datetime.date.today().strftime("%Y/%m/%d")) + f"T{curr_hour}:{curr_minute}:{curr_second}"
 
-    end = str(datetime.date.today().strftime("%m/%d/%Y")) + " 7:00 PM"
-    time_format = '%m/%d/%Y %I:%M %p'
+
+    end = str(datetime.date.today().strftime("%Y/%m/%d")) + "T19:00:00"
+    time_format = '%Y/%m/%dT%H:%M:%S'
 
     start_time = time.mktime(time.strptime(start, time_format))
     end_time = time.mktime(time.strptime(end, time_format))
@@ -353,32 +347,7 @@ def findNearbyAlternativeWorkouts():  # username):
 
     # if time is past 9 PM, do not suggest workouts
     if (randomTime == -1):
-        none_output = {"LiveWorkouts": [
-            {
-                "workout_type": None,
-                "name": None,
-                "address": None,
-                "rating": None,
-                "maps_link": None,
-                "time": None
-            },
-            {
-                "workout_type": None,
-                "name": None,
-                "address": None,
-                "rating": None,
-                "maps_link": None,
-                "time": None
-            },
-            {
-                "workout_type": None,
-                "name": None,
-                "address": None,
-                "rating": None,
-                "maps_link": None,
-                "time": None
-            }
-        ]}
+        none_output = {"LiveWorkouts": []}
 
         return none_output
 
