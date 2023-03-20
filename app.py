@@ -40,7 +40,7 @@ def new_user(username):
     info.delete_one({"name": username})
     user = {
         "name": username,
-        "gym_access": None,
+        "gym_access": True,
         "proficiency": None,
         "previous_weights": dict(),
         "previous_reps": dict(),
@@ -49,16 +49,25 @@ def new_user(username):
         "exercise_scores": dict(),
         "goal": "strength",
         "total_weight": 0,
+        "total_reps": 0,
+        "total_days": 0,
         "onboarded": False
     }
     info.insert_one(user)
     return ""
 
 
-@app.route('/api/gettotalweight/<username>')
-def getTotalWeight(username):
+@app.route('/api/getstats/<username>')
+def getStats(username):
     data = info.find_one({"name": username})
-    return str(data['total_weight'])
+    total_weight = data['total_weight']
+    total_reps = data['total_reps']
+    total_days = data['total_days']
+    d = dict()
+    d['total_weight'] = total_weight
+    d['total_reps'] = total_reps
+    d['total_days'] = total_days
+    return json.dumps(d)
 
 
 @app.route('/api/hasonboarded/<username>')
@@ -129,7 +138,7 @@ def recommend(username, numexercises):  # pass in num_exercises as param
     # if the user already has a workout for the day then return it
     today = date.today()
     workouts = data['workouts']
-
+    #today='2023-03-16'
     if str(today) in workouts:
         return workouts[str(today)]
 
@@ -141,6 +150,8 @@ def recommend(username, numexercises):  # pass in num_exercises as param
     previous_reps = data['previous_reps']
     exercise_difficulty = data['exercise_difficulty']
     total_weight = data['total_weight']
+    total_reps = data['total_reps']
+    total_days = data['total_days']
 
     if not gym_access:
         api_url += "equipment=body_only"
@@ -152,7 +163,8 @@ def recommend(username, numexercises):  # pass in num_exercises as param
     if api_url[-1] != '?':
         api_url += '&'
     # set muscle group based on day
-    day = int(str(date.today())[5:7])
+    day = int(str(date.today())[8:10])
+    cardio = False
     exercises = []
     if goal == 'strength':
         muscle_group = muscle_groups[day % len(muscle_groups)]
@@ -191,6 +203,7 @@ def recommend(username, numexercises):  # pass in num_exercises as param
         workout = weight_loss[day % len(weight_loss)]
         if workout == 'cardio':
             api_url += "type=cardio&"
+            cardio=True
         else:
             api_url += "muscle=" + workout + "&"
         api_url += "offset="
@@ -208,8 +221,11 @@ def recommend(username, numexercises):  # pass in num_exercises as param
                 print("Error:", response.status_code, response.text)
     scores = dict()
     name_to_muscle = dict()
+    body_only = set()
     for exercise in exercises:
         score = 1
+        if exercise['equipment']=='body_only':
+            body_only.add(exercise['name'])
         if not gym_access:
             if exercise['equipment'] == 'body_only':
                 score *= 1.2
@@ -235,31 +251,32 @@ def recommend(username, numexercises):  # pass in num_exercises as param
                     if exercise_difficulty[remove_spaces] == 'easy':
                         ex['weight'] = int(weight * 1.2)
                         previous_weights[remove_spaces] = int(weight * 1.2)
-                        total_weight += int(weight * 1.2)
                         ex['reps'] = int(reps * 1.2)
                         previous_reps[remove_spaces] = int(reps * 1.2)
                     elif exercise_difficulty[remove_spaces] == 'medium':
                         ex['weight'] = int(weight * 1.2)
-                        total_weight += int(weight * 1.2)
                         previous_weights[remove_spaces] = int(weight * 1.2)
+                        ex['reps'] = reps
                     else:
                         ex['weight'] = int(weight * 0.8)
-                        total_weight += int(weight * 0.8)
                         previous_weights[remove_spaces] = int(weight * 0.8)
                         ex['reps'] = int(reps * 0.8)
                         previous_reps[remove_spaces] = int(reps * 0.8)
                 else:
                     ex['weight'] = int(weight * 1.2)
-                    total_weight += int(weight * 1.2)
                     ex['reps'] = int(reps)
                     previous_weights[remove_spaces] = int(weight * 1.2)
             else:
                 # recommend weight of 10lb
                 previous_weights[remove_spaces] = 10
                 ex['weight'] = 10
-                total_weight += 10
                 previous_reps[remove_spaces] = 15
                 ex['reps'] = 15
+            if exercise in body_only or cardio:
+                ex['weight'] = 0
+                ex['reps'] = 0
+            total_weight+=ex['weight']
+            total_reps+=ex['reps']
             final_exercises.append(ex)
         else:
             break
@@ -269,7 +286,7 @@ def recommend(username, numexercises):  # pass in num_exercises as param
     workouts[str(today)] = temp
     info.update_one({"name": username}, {
         "$set": {"workouts": workouts, "previous_weights": previous_weights, 'previous_reps': previous_reps,
-                 "total_weight": total_weight}})
+                 "total_weight": total_weight, "total_reps": total_reps, "total_days": total_days+1}})
     return temp
 
 
