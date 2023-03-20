@@ -49,7 +49,6 @@ def setGoal(username, goal):  # goal can be either strength or weightloss, defau
 
 @app.route('/api/newuser/<username>')
 def new_user(username):
-    info.delete_one({"name": username})
     user = {
         "name": username,
         "gym_access": True,
@@ -284,7 +283,9 @@ def recommend(username, numexercises):  # pass in num_exercises as param
                 ex['weight'] = 10
                 previous_reps[remove_spaces] = 15
                 ex['reps'] = 15
-            if exercise in body_only or cardio:
+            if exercise in body_only:
+                ex['weight'] = 0
+            if cardio:
                 ex['weight'] = 0
                 ex['reps'] = 0
             total_weight+=ex['weight']
