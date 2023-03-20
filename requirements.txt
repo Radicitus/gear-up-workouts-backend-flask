@@ -13,3 +13,5 @@ Werkzeug==2.2.3
 yarg==0.1.9
 
 pymongo~=4.3.3
+googlemaps~=4.10.0
+geocoder~=1.38.1
