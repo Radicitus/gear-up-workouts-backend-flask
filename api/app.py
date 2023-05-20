@@ -3,19 +3,12 @@ from pymongo import MongoClient
 import certifi
 
 from flask import Flask
-from flask import request
 import requests
 import googlemaps
 import time
 import geocoder
 import random
 import datetime
-import itertools
-from collections import Counter
-
-#
-# from pymongo import MongoClient
-# import certifi
 
 
 from datetime import date
@@ -300,6 +293,8 @@ def recommend(username, numexercises):  # pass in num_exercises as param
     info.update_one({"name": username}, {
         "$set": {"workouts": workouts, "previous_weights": previous_weights, 'previous_reps': previous_reps,
                  "total_weight": total_weight, "total_reps": total_reps, "total_days": total_days+1}})
+
+    print(temp)
     return temp
 
 
